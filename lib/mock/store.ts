@@ -141,6 +141,23 @@ function seed() {
   };
   mock.insert("users", demoUser);
 
+  const personal: Row = {
+    id: "44444444-4444-4444-4444-444444444444",
+    name: "Sanjaee",
+    email: "afrizaahmad18@gmail.com",
+    emailVerified: true,
+    passwordHash: hash,
+    image: "",
+    company: "Zacode",
+    phone: "",
+    role: "owner",
+    language: "en",
+    timezone: "Asia/Jakarta",
+    createdAt: daysAgo(150),
+    updatedAt: daysAgo(1),
+  };
+  mock.insert("users", personal);
+
   const plans = [
     {
       name: "Starter", slug: "starter",
