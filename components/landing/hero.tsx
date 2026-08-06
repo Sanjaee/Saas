@@ -181,20 +181,6 @@ export function Hero() {
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-6 flex justify-center"
-          >
-            <Badge className="gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-xs font-medium">
-              <span className="flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-violet-600 dark:text-violet-300">
-                <Sparkles className="size-3" /> New
-              </span>
-              AI-powered insights are here
-            </Badge>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
