@@ -28,9 +28,13 @@ const AUTH_PREFIXES = ["/login", "/register", "/forgot-password"];
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 
 function getSessionCookie(req: NextRequest) {
-  const isSecure = req.nextUrl.protocol === "https:";
-  const name = isSecure ? "__Secure-zacode.session-token" : "zacode.session-token";
-  return req.cookies.get(name);
+  // NextAuth uses the configured name as-is (no auto `__Secure-` prefix when
+  // the name is set explicitly), so check both variants to be safe on
+  // HTTP and HTTPS hosts.
+  return (
+    req.cookies.get("zacode.session-token") ??
+    req.cookies.get("__Secure-zacode.session-token")
+  );
 }
 
 async function getSessionRole(req: NextRequest): Promise<string | null> {
