@@ -2,14 +2,14 @@
 import type { ActionState } from "@/lib/action-state";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { inviteSchema } from "@/lib/validations";
 import { createTeamMember, updateTeamMember, removeTeamMember } from "@/lib/data";
 import { ROLE_LABELS } from "@/lib/permissions";
 
 export async function inviteMemberAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
 
   const parsed = inviteSchema.safeParse({
     email: formData.get("email"),
@@ -34,8 +34,8 @@ export async function inviteMemberAction(prevState: ActionState, formData: FormD
 }
 
 export async function updateMemberAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   const id = String(formData.get("id") ?? "");
   const role = String(formData.get("role") ?? "member") as "owner" | "admin" | "manager" | "member";
   const permissions = String(formData.get("permissions") ?? "")
@@ -47,8 +47,8 @@ export async function updateMemberAction(prevState: ActionState, formData: FormD
 }
 
 export async function removeMemberAction(id: string) {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   await removeTeamMember(id);
   revalidatePath("/team");
   return { success: "Member removed." };

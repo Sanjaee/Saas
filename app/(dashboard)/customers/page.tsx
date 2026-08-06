@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Download } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CustomerTable } from "@/components/dashboard/customers/customer-table";
-import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth";
+import { ExportCsvButton } from "@/components/dashboard/export-csv-button";
+import { auth, requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { listCustomers } from "@/lib/data";
-import { downloadCsv, toCsv } from "@/lib/csv";
 
 export const metadata: Metadata = { title: "Customers" };
 
@@ -19,6 +17,7 @@ export default async function CustomersPage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const canWrite = !!(await requireRole("manager"));
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
@@ -55,18 +54,11 @@ export default async function CustomersPage({
         title="Customers"
         description="Manage your customer base — add, edit, search and export."
       >
-        <Button
-          variant="outline"
-          className="gap-1.5"
-          onClick={() => {
-            downloadCsv(
-              "customers.csv",
-              toCsv(rows as unknown as Record<string, unknown>[], csvColumns),
-            );
-          }}
-        >
-          <Download className="size-4" /> Export CSV
-        </Button>
+        <ExportCsvButton
+          filename="customers.csv"
+          columns={csvColumns}
+          rows={rows as unknown as Record<string, unknown>[]}
+        />
       </PageHeader>
 
       <CustomerTable
@@ -74,6 +66,7 @@ export default async function CustomersPage({
         total={total}
         page={page}
         pageSize={pageSize}
+        canWrite={canWrite}
       />
     </div>
   );

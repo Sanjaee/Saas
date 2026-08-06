@@ -129,7 +129,7 @@ function LeadFormDialog({
   );
 }
 
-export function LeadsTable({ rows }: { rows: LeadRow[] }) {
+export function LeadsTable({ rows, canWrite = true }: { rows: LeadRow[]; canWrite?: boolean }) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<LeadRow | undefined>();
   const [deleting, setDeleting] = React.useState<LeadRow | undefined>();
@@ -185,33 +185,37 @@ export function LeadsTable({ rows }: { rows: LeadRow[] }) {
         header: "Created",
         cell: ({ getValue }) => <span className="text-sm text-muted-foreground">{formatDate(getValue())}</span>,
       }),
-      columnHelper.display({
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <div className="flex justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Edit lead"
-              onClick={() => { setEditing(row.original); setDialogOpen(true); }}
-            >
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-destructive hover:text-destructive"
-              aria-label="Delete lead"
-              onClick={() => setDeleting(row.original)}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        ),
-      }),
+      ...(canWrite
+        ? [
+            columnHelper.display({
+              id: "actions",
+              header: "",
+              cell: ({ row }) => (
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Edit lead"
+                    onClick={() => { setEditing(row.original); setDialogOpen(true); }}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-destructive hover:text-destructive"
+                    aria-label="Delete lead"
+                    onClick={() => setDeleting(row.original)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ),
+            }),
+          ]
+        : []),
     ],
-    [],
+    [canWrite],
   );
 
   return (
@@ -223,9 +227,11 @@ export function LeadsTable({ rows }: { rows: LeadRow[] }) {
         filterOptions={["new", "contacted", "qualified", "proposal", "won", "lost"].map((s) => ({ label: s, value: s }))}
         filterColumn="status"
         toolbar={
-          <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }} className="gap-1.5">
-            <Plus className="size-4" /> Add lead
-          </Button>
+          canWrite && (
+            <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }} className="gap-1.5">
+              <Plus className="size-4" /> Add lead
+            </Button>
+          )
         }
       />
 

@@ -46,6 +46,11 @@ export async function completeMockPaymentAction(formData: FormData) {
   if (!user) return { error: "Not authenticated" };
   const orderId = String(formData.get("orderId") ?? "");
   const provider = String(formData.get("provider") ?? "demo") as PaymentProvider;
+
+  const { getOrderById } = await import("@/lib/data");
+  const order = await getOrderById(orderId);
+  if (!order || order.userId !== user.id) return { error: "Order not found." };
+
   await completeOrderPayment(orderId, provider);
   redirect("/billing?success=1");
 }
@@ -53,6 +58,9 @@ export async function completeMockPaymentAction(formData: FormData) {
 export async function cancelSubscriptionAction(id: string) {
   const user = await requireUser();
   if (!user) return { error: "Not authenticated" };
+  const { getSubscriptionById } = await import("@/lib/data");
+  const sub = await getSubscriptionById(id);
+  if (!sub || sub.userId !== user.id) return { error: "Subscription not found." };
   await updateSubscription(id, { status: "canceled" });
   revalidatePath("/billing");
   return { success: "Subscription canceled. You'll have access until the end of the period." };
@@ -61,6 +69,9 @@ export async function cancelSubscriptionAction(id: string) {
 export async function upgradeSubscriptionAction(id: string, planId: string) {
   const user = await requireUser();
   if (!user) return { error: "Not authenticated" };
+  const { getSubscriptionById } = await import("@/lib/data");
+  const sub = await getSubscriptionById(id);
+  if (!sub || sub.userId !== user.id) return { error: "Subscription not found." };
   await updateSubscription(id, { planId });
   revalidatePath("/billing");
   return { success: "Plan updated." };

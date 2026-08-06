@@ -204,11 +204,13 @@ export function CustomerTable({
   total,
   page,
   pageSize,
+  canWrite = true,
 }: {
   rows: CustomerRow[];
   total: number;
   page: number;
   pageSize: number;
+  canWrite?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -262,37 +264,41 @@ export function CustomerTable({
         header: "Revenue",
         cell: ({ getValue }) => <span className="font-medium tabular-nums">{formatCurrency(getValue())}</span>,
       }),
-      columnHelper.display({
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label="Actions">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditing(row.original);
-                  setDialogOpen(true);
-                }}
-              >
-                <Pencil className="size-4" /> Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => setDeleting(row.original)}
-              >
-                <Trash2 className="size-4" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-      }),
+      ...(canWrite
+        ? [
+            columnHelper.display({
+              id: "actions",
+              header: "",
+              cell: ({ row }) => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm" aria-label="Actions">
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditing(row.original);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="size-4" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setDeleting(row.original)}
+                    >
+                      <Trash2 className="size-4" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+            }),
+          ]
+        : []),
     ],
-    [],
+    [canWrite],
   );
 
   const table = useReactTable({
@@ -381,9 +387,11 @@ export function CustomerTable({
           </SelectContent>
         </Select>
         <div className="flex flex-1 justify-end">
-          <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }} className="gap-1.5">
-            <Plus className="size-4" /> Add customer
-          </Button>
+          {canWrite && (
+            <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }} className="gap-1.5">
+              <Plus className="size-4" /> Add customer
+            </Button>
+          )}
         </div>
       </div>
 

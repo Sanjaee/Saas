@@ -93,15 +93,17 @@ function CreateKeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
   );
 }
 
-export function ApiKeysPanel({ keys }: { keys: ApiKeyRow[] }) {
+export function ApiKeysPanel({ keys, canManage = true }: { keys: ApiKeyRow[]; canManage?: boolean }) {
   const [open, setOpen] = React.useState(false);
 
   return (
     <div>
       <PageHeader title="API Keys" description="Authenticate your API requests securely.">
-        <Button onClick={() => setOpen(true)} className="gap-1.5">
-          <Plus className="size-4" /> Create key
-        </Button>
+        {canManage && (
+          <Button onClick={() => setOpen(true)} className="gap-1.5">
+            <Plus className="size-4" /> Create key
+          </Button>
+        )}
       </PageHeader>
 
       <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
@@ -145,7 +147,7 @@ export function ApiKeysPanel({ keys }: { keys: ApiKeyRow[] }) {
                     {key.lastUsedAt ? ` · Last used ${timeAgo(key.lastUsedAt)}` : " · Never used"}
                   </p>
                 </div>
-                {!key.revoked && (
+                {!key.revoked && canManage && (
                   <Button
                     variant="outline"
                     size="sm"

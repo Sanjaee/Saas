@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { auth, requireRole } from "@/lib/auth";
 import { listCustomers, createCustomer, updateCustomer } from "@/lib/data";
 import { customerSchema } from "@/lib/validations";
 
@@ -21,9 +21,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
+async function canWrite(): Promise<boolean> {
+  const user = await requireRole("manager");
+  return !!user;
+}
+
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await canWrite())) {
+    return NextResponse.json({ error: "You need manager permissions for this action." }, { status: 403 });
+  }
   const body = await request.json();
   const parsed = customerSchema.safeParse(body);
   if (!parsed.success) {
@@ -38,8 +44,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await canWrite())) {
+    return NextResponse.json({ error: "You need manager permissions for this action." }, { status: 403 });
+  }
   const body = await request.json();
   const parsed = customerSchema.safeParse(body);
   if (!parsed.success) {

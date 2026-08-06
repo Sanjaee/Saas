@@ -2,7 +2,7 @@
 import type { ActionState } from "@/lib/action-state";
 
 import { revalidatePath } from "next/cache";
-import { requireUser, requireAdmin } from "@/lib/auth";
+import { requireRole, requireAdmin } from "@/lib/auth";
 import { customerSchema, leadSchema } from "@/lib/validations";
 import {
   createCustomer,
@@ -26,8 +26,8 @@ function audit(
 }
 
 export async function createCustomerAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
 
   const parsed = customerSchema.safeParse({
     name: formData.get("name"),
@@ -47,8 +47,8 @@ export async function createCustomerAction(prevState: ActionState, formData: For
 }
 
 export async function updateCustomerAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   const id = String(formData.get("id") ?? "");
 
   const parsed = customerSchema.safeParse({
@@ -69,8 +69,8 @@ export async function updateCustomerAction(prevState: ActionState, formData: For
 }
 
 export async function deleteCustomerAction(id: string) {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   await deleteCustomer(id);
   audit(user, "customer.delete", "customer", id);
   revalidatePath("/customers");
@@ -78,8 +78,8 @@ export async function deleteCustomerAction(id: string) {
 }
 
 export async function createLeadAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
 
   const parsed = leadSchema.safeParse({
     name: formData.get("name"),
@@ -98,8 +98,8 @@ export async function createLeadAction(prevState: ActionState, formData: FormDat
 }
 
 export async function updateLeadAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   const id = String(formData.get("id") ?? "");
 
   const parsed = leadSchema.safeParse({
@@ -119,8 +119,8 @@ export async function updateLeadAction(prevState: ActionState, formData: FormDat
 }
 
 export async function deleteLeadAction(id: string) {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   await deleteLead(id);
   audit(user, "lead.delete", "lead", id);
   revalidatePath("/leads");

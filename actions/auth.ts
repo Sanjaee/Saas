@@ -3,8 +3,7 @@ import type { ActionState } from "@/lib/action-state";
 
 import bcrypt from "bcryptjs";
 import { generateSecret, generateURI, verifySync } from "otplib";
-import QRCode from "qrcode";
-import { redirect } from "next/navigation";
+import QRCode from "qrcode";import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import {
@@ -35,6 +34,14 @@ import {
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function safeVerify(secret: string, token: string): boolean {
+  try {
+    return verifySync({ secret, token }).valid;
+  } catch {
+    return false;
+  }
 }
 
 function randomToken() {
@@ -248,7 +255,7 @@ export async function enable2FAAction(formData: FormData) {
   const secret = await get2FASecret(user.id);
   if (!secret?.secret) return { error: "Start setup first." };
 
-  const valid = verifySync({ secret: secret.secret, token: code }).valid;
+  const valid = safeVerify(secret.secret, code);
   if (!valid) return { error: "Invalid code. Check your authenticator app and try again." };
 
   const backupCodes = Array.from({ length: 8 }, () =>
@@ -265,7 +272,7 @@ export async function disable2FAAction(formData: FormData) {
   const code = String(formData.get("code") ?? "");
   const secret = await get2FASecret(user.id);
   if (!secret?.secret) return { error: "2FA is not set up." };
-  const valid = verifySync({ secret: secret.secret, token: code }).valid;
+  const valid = safeVerify(secret.secret, code);
   if (!valid) return { error: "Invalid code." };
   await upsert2FASecret(user.id, { enabled: false, backupCodes: [] });
   revalidatePath("/settings/security");
@@ -288,14 +295,18 @@ export async function verifyTwoFactorAction(prevState: ActionState, formData: Fo
       code: parsed.data.code,
       redirectTo: "/dashboard",
     });
-    return { success: "Signed in." };
   } catch (error) {
-    if (error instanceof Error && "type" in error && (error as { type?: string }).type === "CredentialsSignin") {
+    const err = error as { type?: string; digest?: string; message?: string };
+    if (err?.type === "CredentialsSignin") {
       return { error: "Invalid code. Please try again." };
     }
-    if (error instanceof Error && error.message?.includes("NEXT_REDIRECT")) {
+    if (
+      err?.digest?.startsWith("NEXT_REDIRECT") ||
+      err?.message?.includes("NEXT_REDIRECT")
+    ) {
       redirect("/dashboard");
     }
     throw error;
   }
+  redirect("/dashboard");
 }

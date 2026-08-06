@@ -2,13 +2,13 @@
 import type { ActionState } from "@/lib/action-state";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { productSchema } from "@/lib/validations";
 import { createProduct, updateProduct, deleteProduct } from "@/lib/data";
 
 export async function createProductAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   const parsed = productSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description"),
@@ -26,8 +26,8 @@ export async function createProductAction(prevState: ActionState, formData: Form
 }
 
 export async function updateProductAction(prevState: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   const id = String(formData.get("id") ?? "");
   const parsed = productSchema.safeParse({
     name: formData.get("name"),
@@ -46,8 +46,8 @@ export async function updateProductAction(prevState: ActionState, formData: Form
 }
 
 export async function deleteProductAction(id: string) {
-  const user = await requireUser();
-  if (!user) return { error: "Not authenticated" };
+  const user = await requireRole("manager");
+  if (!user) return { error: "You need manager permissions for this action." };
   await deleteProduct(id);
   revalidatePath("/products");
   revalidatePath("/admin/products");

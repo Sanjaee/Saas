@@ -127,7 +127,7 @@ function ProductFormDialog({
   );
 }
 
-export function ProductsTable({ rows }: { rows: ProductRow[] }) {
+export function ProductsTable({ rows, canWrite = true }: { rows: ProductRow[]; canWrite?: boolean }) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<ProductRow | undefined>();
   const [deleting, setDeleting] = React.useState<ProductRow | undefined>();
@@ -187,22 +187,26 @@ export function ProductsTable({ rows }: { rows: ProductRow[] }) {
           </Badge>
         ),
       }),
-      columnHelper.display({
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="icon-sm" aria-label="Edit" onClick={() => { setEditing(row.original); setDialogOpen(true); }}>
-              <Pencil className="size-4" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" aria-label="Delete" onClick={() => setDeleting(row.original)}>
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        ),
-      }),
+      ...(canWrite
+        ? [
+            columnHelper.display({
+              id: "actions",
+              header: "",
+              cell: ({ row }) => (
+                <div className="flex justify-end gap-1">
+                  <Button variant="ghost" size="icon-sm" aria-label="Edit" onClick={() => { setEditing(row.original); setDialogOpen(true); }}>
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" aria-label="Delete" onClick={() => setDeleting(row.original)}>
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ),
+            }),
+          ]
+        : []),
     ],
-    [],
+    [canWrite],
   );
 
   return (
@@ -212,9 +216,11 @@ export function ProductsTable({ rows }: { rows: ProductRow[] }) {
         data={rows}
         searchPlaceholder="Search products…"
         toolbar={
-          <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }} className="gap-1.5">
-            <Plus className="size-4" /> Add product
-          </Button>
+          canWrite && (
+            <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }} className="gap-1.5">
+              <Plus className="size-4" /> Add product
+            </Button>
+          )
         }
       />
 

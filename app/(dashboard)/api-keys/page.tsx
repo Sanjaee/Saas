@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { ApiKeysPanel } from "@/components/dashboard/api-keys/api-keys-panel";
-import { auth, requireUser } from "@/lib/auth";
+import { auth, requireUser, requireRole } from "@/lib/auth";
 import { listApiKeys } from "@/lib/data";
 
 export const metadata: Metadata = { title: "API Keys" };
@@ -12,6 +12,7 @@ export default async function ApiKeysPage() {
   if (!session?.user) redirect("/login");
   const user = await requireUser();
   if (!user) redirect("/login");
+  const canManage = !!(await requireRole("admin"));
 
   let keys: Awaited<ReturnType<typeof listApiKeys>> = [];
   try {
@@ -20,5 +21,5 @@ export default async function ApiKeysPage() {
     // offline
   }
 
-  return <ApiKeysPanel keys={keys as never} />;
+  return <ApiKeysPanel keys={keys as never} canManage={canManage} />;
 }

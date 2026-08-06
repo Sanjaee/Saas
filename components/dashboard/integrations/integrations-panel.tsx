@@ -31,7 +31,7 @@ const INTEGRATION_META: Record<string, { color: string; glyph: string }> = {
   airtable: { color: "#18BFFF", glyph: "A" },
 };
 
-export function IntegrationsPanel({ integrations }: { integrations: IntegrationRow[] }) {
+export function IntegrationsPanel({ integrations, canManage = true }: { integrations: IntegrationRow[]; canManage?: boolean }) {
   const [list, setList] = React.useState(integrations);
   const [pending, setPending] = React.useState<string | null>(null);
 
@@ -83,22 +83,24 @@ export function IntegrationsPanel({ integrations }: { integrations: IntegrationR
                   </div>
                   <p className="mt-0.5 text-xs text-muted-foreground">{integration.provider}</p>
                 </div>
-                <Button
-                  variant={integration.connected ? "outline" : "default"}
-                  size="sm"
-                  onClick={() => toggle(integration)}
-                  disabled={pending === integration.id}
-                  className="gap-1.5"
-                >
-                  {pending === integration.id ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : integration.connected ? (
-                    <Unplug className="size-3.5" />
-                  ) : (
-                    <Plug className="size-3.5" />
-                  )}
-                  {integration.connected ? "Disconnect" : "Connect"}
-                </Button>
+                {canManage && (
+                  <Button
+                    variant={integration.connected ? "outline" : "default"}
+                    size="sm"
+                    onClick={() => toggle(integration)}
+                    disabled={pending === integration.id}
+                    className="gap-1.5"
+                  >
+                    {pending === integration.id ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : integration.connected ? (
+                      <Unplug className="size-3.5" />
+                    ) : (
+                      <Plug className="size-3.5" />
+                    )}
+                    {integration.connected ? "Disconnect" : "Connect"}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );

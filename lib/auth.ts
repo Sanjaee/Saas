@@ -88,8 +88,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!code) {
             throw new TwoFactorRequiredError();
           }
-          const ok = verifySync({ secret: twoFactor.secret, token: code }).valid;
-          if (!ok) return null;
+          try {
+            const ok = verifySync({ secret: twoFactor.secret, token: code }).valid;
+            if (!ok) return null;
+          } catch {
+            return null;
+          }
         }
 
         return {
@@ -175,5 +179,23 @@ export async function requireAdmin() {
   if (!user) return null;
   const role = (user.role ?? "member") as (typeof ROLE_HIERARCHY)[number];
   if (role !== "admin" && role !== "owner") return null;
+  return user;
+}
+
+const ROLE_RANK: Record<(typeof ROLE_HIERARCHY)[number], number> = {
+  member: 0,
+  manager: 1,
+  admin: 2,
+  owner: 3,
+};
+
+/**
+ * Returns the authenticated user only if their role is at least `minRole`.
+ * `minRole` should be one of: "manager", "admin", "owner".
+ */
+export async function requireRole(minRole: "manager" | "admin" | "owner") {
+  const user = await requireUser();
+  if (!user) return null;
+  if ((ROLE_RANK[user.role] ?? 0) < ROLE_RANK[minRole]) return null;
   return user;
 }

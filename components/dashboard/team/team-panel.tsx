@@ -110,16 +110,18 @@ function InviteDialog({
   );
 }
 
-export function TeamPanel({ members }: { members: TeamMemberRow[] }) {
+export function TeamPanel({ members, canManage = true }: { members: TeamMemberRow[]; canManage?: boolean }) {
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [removing, setRemoving] = React.useState<TeamMemberRow | undefined>();
 
   return (
     <div>
       <PageHeader title="Team" description="Members, roles and permissions.">
-        <Button onClick={() => setInviteOpen(true)} className="gap-1.5">
-          <Plus className="size-4" /> Invite member
-        </Button>
+        {canManage && (
+          <Button onClick={() => setInviteOpen(true)} className="gap-1.5">
+            <Plus className="size-4" /> Invite member
+          </Button>
+        )}
       </PageHeader>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -190,15 +192,17 @@ export function TeamPanel({ members }: { members: TeamMemberRow[] }) {
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{formatDate(member.createdAt)}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-destructive hover:text-destructive"
-                    aria-label="Remove member"
-                    onClick={() => setRemoving(member)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                  {canManage && (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive hover:text-destructive"
+                      aria-label="Remove member"
+                      onClick={() => setRemoving(member)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

@@ -425,6 +425,16 @@ export async function getSubscriptionByUser(userId: string) {
   return res[0] ?? null;
 }
 
+export async function getSubscriptionById(id: string) {
+  if (isMock) {
+    ensureMockSeeded();
+    return mock.findById<typeof schema.subscriptions.$inferSelect>(tables.subscriptions, id) ?? null;
+  }
+  const db = getDb();
+  const res = await db.select().from(schema.subscriptions).where(eq(schema.subscriptions.id, id)).limit(1);
+  return res[0] ?? null;
+}
+
 export async function createSubscription(data: typeof schema.subscriptions.$inferInsert) {
   if (isMock) {
     ensureMockSeeded();
@@ -450,22 +460,28 @@ export async function updateSubscription(id: string, patch: Partial<typeof schem
 // ---------------------------------------------------------------------------
 // Orders / Invoices / Payments
 // ---------------------------------------------------------------------------
-export async function listOrders(opts?: CustomerListOpts) {
+export async function listOrders(opts?: CustomerListOpts & { userId?: string }) {
   if (isMock) {
     ensureMockSeeded();
-    const res = mockList<typeof schema.orders.$inferSelect>(tables.orders, {
-      search: opts?.search,
-      searchFields: ["customerName", "customerEmail"],
-      status: opts?.status,
-      sortBy: "createdAt",
-      sortDir: "desc",
-      page: opts?.page,
-      pageSize: opts?.pageSize,
-    });
-    return res;
+    let rows = mock.all<typeof schema.orders.$inferSelect>(tables.orders);
+    if (opts?.userId) rows = rows.filter((o) => o.userId === opts.userId);
+    if (opts?.search) {
+      const q = opts.search.toLowerCase();
+      rows = rows.filter(
+        (o) =>
+          o.customerName.toLowerCase().includes(q) || o.customerEmail.toLowerCase().includes(q),
+      );
+    }
+    if (opts?.status) rows = rows.filter((o) => o.status === opts.status);
+    rows = rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const total = rows.length;
+    const page = opts?.page ?? 1;
+    const pageSize = opts?.pageSize ?? (total || 10);
+    return { rows: rows.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize), total };
   }
   const db = getDb();
   const conditions = [];
+  if (opts?.userId) conditions.push(eq(schema.orders.userId, opts.userId));
   if (opts?.search) conditions.push(ilike(schema.orders.customerEmail, `%${opts.search}%`));
   if (opts?.status) conditions.push(eq(schema.orders.status, opts.status));
   const total = (await db.select().from(schema.orders).where(and(...conditions))).length;
@@ -511,19 +527,22 @@ export async function getOrderById(id: string) {
   return res[0] ?? null;
 }
 
-export async function listInvoices(opts?: CustomerListOpts) {
+export async function listInvoices(opts?: CustomerListOpts & { userId?: string }) {
   if (isMock) {
     ensureMockSeeded();
-    return mockList<typeof schema.invoices.$inferSelect>(tables.invoices, {
-      status: opts?.status,
-      sortBy: "issuedAt",
-      sortDir: "desc",
-      page: opts?.page,
-      pageSize: opts?.pageSize,
-    });
+    let rows = mock.all<typeof schema.invoices.$inferSelect>(tables.invoices);
+    if (opts?.userId) rows = rows.filter((inv) => inv.userId === opts.userId);
+    if (opts?.status) rows = rows.filter((inv) => inv.status === opts.status);
+    rows = rows.sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime());
+    const total = rows.length;
+    const page = opts?.page ?? 1;
+    const pageSize = opts?.pageSize ?? (total || 10);
+    return { rows: rows.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize), total };
   }
   const db = getDb();
-  const conditions = opts?.status ? [eq(schema.invoices.status, opts.status)] : [];
+  const conditions = [];
+  if (opts?.userId) conditions.push(eq(schema.invoices.userId, opts.userId));
+  if (opts?.status) conditions.push(eq(schema.invoices.status, opts.status));
   const total = (await db.select().from(schema.invoices).where(and(...conditions))).length;
   const rows = await db
     .select()

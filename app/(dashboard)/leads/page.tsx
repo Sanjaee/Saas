@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { LeadsTable } from "@/components/dashboard/leads/leads-table";
-import { auth } from "@/lib/auth";
+import { auth, requireRole } from "@/lib/auth";
 import { listLeads } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Leads" };
@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Leads" };
 export default async function LeadsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const canWrite = !!(await requireRole("manager"));
 
   let rows: Awaited<ReturnType<typeof listLeads>>["rows"] = [];
   try {
@@ -26,7 +27,7 @@ export default async function LeadsPage() {
         title="Leads"
         description="Track, qualify and convert your pipeline."
       />
-      <LeadsTable rows={rows as never} />
+      <LeadsTable rows={rows as never} canWrite={canWrite} />
     </div>
   );
 }

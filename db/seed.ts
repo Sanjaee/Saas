@@ -143,6 +143,65 @@ async function main() {
     }
   }
 
+  // Demo billing history: orders, invoices and payments for the demo user.
+  if (demoUser) {
+    const pro = planRows.find((p) => p.slug === "pro");
+    const plan = pro ?? planRows[0];
+    const now = new Date();
+    const demoOrders: (typeof schema.orders.$inferInsert)[] = [];
+    for (let i = 0; i < 6; i++) {
+      const created = daysAgo(15 + i * 60);
+      demoOrders.push({
+        userId: demoUser.id,
+        planId: plan?.id,
+        customerName: "Jordan Blake",
+        customerEmail: demoUser.email,
+        amount: i % 2 === 0 ? 470 : 49,
+        currency: "USD",
+        status: "paid",
+        provider: ["stripe", "midtrans", "xendit", "paypal", "demo"][i % 5],
+        interval: i % 2 === 0 ? "annual" : "monthly",
+        createdAt: created,
+      });
+    }
+    const inserted = await db.insert(schema.orders).values(demoOrders).onConflictDoNothing().returning();
+    const year = now.getFullYear();
+    for (let i = 0; i < inserted.length; i++) {
+      const order = inserted[i];
+      const subtotal = Math.round(order.amount * 100) / 100;
+      const tax = Math.round(order.amount * 0.1 * 100) / 100;
+      const [inv] = await db
+        .insert(schema.invoices)
+        .values({
+          userId: demoUser.id,
+          orderId: order.id,
+          number: `INV-${year}${String(1000 + i + 1)}`,
+          subtotal,
+          taxAmount: tax,
+          total: Math.round((subtotal + tax) * 100) / 100,
+          currency: "USD",
+          status: "paid",
+          issuedAt: order.createdAt,
+          dueAt: order.createdAt,
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (inv) {
+        await db.insert(schema.payments).values({
+          userId: demoUser.id,
+          orderId: order.id,
+          provider: order.provider,
+          amount: order.amount,
+          currency: "USD",
+          status: "succeeded",
+          providerTransactionId: `txn_${Math.random().toString(36).slice(2, 14)}`,
+          createdAt: order.createdAt,
+        });
+      }
+    }
+    console.log("   Demo billing history seeded (orders + invoices + payments).");
+  }
+
   await db
     .insert(schema.testimonials)
     .values([

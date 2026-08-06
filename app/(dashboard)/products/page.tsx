@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ProductsTable } from "@/components/dashboard/products/products-table";
-import { auth } from "@/lib/auth";
+import { auth, requireRole } from "@/lib/auth";
 import { listProducts } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Products" };
@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Products" };
 export default async function ProductsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const canWrite = !!(await requireRole("manager"));
 
   let rows: Awaited<ReturnType<typeof listProducts>> = [];
   try {
@@ -22,7 +23,7 @@ export default async function ProductsPage() {
   return (
     <div>
       <PageHeader title="Products" description="Your catalog & inventory." />
-      <ProductsTable rows={rows as never} />
+      <ProductsTable rows={rows as never} canWrite={canWrite} />
     </div>
   );
 }

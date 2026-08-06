@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { OrdersTable } from "@/components/dashboard/orders/orders-table";
-import { auth } from "@/lib/auth";
+import { auth, requireUser } from "@/lib/auth";
 import { listOrders } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Orders" };
@@ -11,10 +11,12 @@ export const metadata: Metadata = { title: "Orders" };
 export default async function OrdersPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const user = await requireUser();
+  if (!user) redirect("/login");
 
   let rows: Awaited<ReturnType<typeof listOrders>>["rows"] = [];
   try {
-    const result = await listOrders({ page: 1, pageSize: 1000 });
+    const result = await listOrders({ page: 1, pageSize: 1000, userId: user.id });
     rows = result.rows;
   } catch {
     // offline
