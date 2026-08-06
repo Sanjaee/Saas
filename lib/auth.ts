@@ -56,7 +56,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: process.env.NODE_ENV === "production",
+        // Only mark the cookie Secure when the app is actually served over
+        // HTTPS (Vercel, etc.). Setting it unconditionally in production
+        // breaks login over plain HTTP (e.g. `npm run start` on localhost).
+        secure:
+          process.env.NODE_ENV === "production" &&
+          (process.env.VERCEL === "1" ||
+            (process.env.AUTH_URL ?? "").startsWith("https://")),
       },
     },
   },
